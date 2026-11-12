@@ -10,6 +10,19 @@ The project features email/password authentication, private per-user expense rec
 
 ---
 
+## 🔑 Demo Account
+
+Want to explore Minto without creating an account?
+
+Use the demo credentials below:
+
+- **Email:** `testuser@test.com`
+- **Password:** `@test_user2026`
+
+> This is a shared demo account. Please avoid adding personal or sensitive information. Changes made to this account may be visible to other visitors.
+
+---
+
 ## ✨ Features
 
 - 🔐 **Authentication** — Register, sign in, and sign out using Better Auth.
