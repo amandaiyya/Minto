@@ -1,4 +1,6 @@
 import { connectToDatabase } from "@/lib/mongodb";
+import { getAuthenticatedOwnerId } from "@/lib/auth-session";
+import { validateExpenseMutationOrigin } from "@/lib/expense-csrf";
 import ExpenseModel, { EXPENSE_CATEGORIES } from "@/models/expense";
 import { z } from "zod";
 
@@ -26,11 +28,26 @@ const createExpenseSchema = z.strictObject({
     .transform((value) => new Date(value)),
 });
 
-export async function GET(): Promise<Response> {
+function unauthorizedResponse(): Response {
+  return Response.json(
+    {
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Authentication is required.",
+      },
+    },
+    { status: 401, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+export async function GET(request: Request): Promise<Response> {
   try {
+    const ownerId = await getAuthenticatedOwnerId(request);
+    if (!ownerId) return unauthorizedResponse();
+
     await connectToDatabase();
 
-    const expenses = await ExpenseModel.find({})
+    const expenses = await ExpenseModel.find({ ownerId })
       .select(EXPENSE_FIELDS)
       .sort({ date: -1 })
       .limit(MAX_EXPENSES)
@@ -52,6 +69,27 @@ export async function GET(): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const originError = validateExpenseMutationOrigin(request);
+  if (originError) return originError;
+
+  let ownerId;
+
+  try {
+    ownerId = await getAuthenticatedOwnerId(request);
+  } catch {
+    return Response.json(
+      {
+        error: {
+          code: "CREATE_FAILED",
+          message: "Unable to create expense.",
+        },
+      },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  if (!ownerId) return unauthorizedResponse();
+
   let body: unknown;
 
   try {
@@ -104,7 +142,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     await connectToDatabase();
 
-    const expense = await ExpenseModel.create(parsed.data);
+    const expense = await ExpenseModel.create({ ...parsed.data, ownerId });
 
     return Response.json(
       {

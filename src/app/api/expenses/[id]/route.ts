@@ -1,4 +1,6 @@
 import { connectToDatabase } from "@/lib/mongodb";
+import { getAuthenticatedOwnerId } from "@/lib/auth-session";
+import { validateExpenseMutationOrigin } from "@/lib/expense-csrf";
 import ExpenseModel, { EXPENSE_CATEGORIES } from "@/models/expense";
 import { isObjectIdOrHexString } from "mongoose";
 import { z } from "zod";
@@ -106,16 +108,28 @@ async function getValidId(context: RouteContext): Promise<string | null> {
   return isObjectIdOrHexString(id) ? id : null;
 }
 
+function unauthorizedResponse(): Response {
+  return errorResponse(401, "UNAUTHORIZED", "Authentication is required.");
+}
+
 export async function GET(
-  _request: Request,
+  request: Request,
   context: RouteContext,
 ): Promise<Response> {
+  let ownerId;
+  try {
+    ownerId = await getAuthenticatedOwnerId(request);
+  } catch {
+    return errorResponse(500, "RETRIEVE_FAILED", "Unable to retrieve expense.");
+  }
+  if (!ownerId) return unauthorizedResponse();
+
   const id = await getValidId(context);
   if (!id) return invalidIdResponse();
 
   try {
     await connectToDatabase();
-    const expense = await ExpenseModel.findById(id)
+    const expense = await ExpenseModel.findOne({ _id: id, ownerId })
       .select(EXPENSE_FIELDS)
       .lean()
       .exec();
@@ -139,6 +153,17 @@ export async function PATCH(
   request: Request,
   context: RouteContext,
 ): Promise<Response> {
+  const originError = validateExpenseMutationOrigin(request);
+  if (originError) return originError;
+
+  let ownerId;
+  try {
+    ownerId = await getAuthenticatedOwnerId(request);
+  } catch {
+    return errorResponse(500, "UPDATE_FAILED", "Unable to update expense.");
+  }
+  if (!ownerId) return unauthorizedResponse();
+
   const id = await getValidId(context);
   if (!id) return invalidIdResponse();
 
@@ -154,8 +179,8 @@ export async function PATCH(
 
   try {
     await connectToDatabase();
-    const expense = await ExpenseModel.findByIdAndUpdate(
-      id,
+    const expense = await ExpenseModel.findOneAndUpdate(
+      { _id: id, ownerId },
       { $set: parsed.data },
       { new: true, runValidators: true },
     )
@@ -179,15 +204,26 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: RouteContext,
 ): Promise<Response> {
+  const originError = validateExpenseMutationOrigin(request);
+  if (originError) return originError;
+
+  let ownerId;
+  try {
+    ownerId = await getAuthenticatedOwnerId(request);
+  } catch {
+    return errorResponse(500, "DELETE_FAILED", "Unable to delete expense.");
+  }
+  if (!ownerId) return unauthorizedResponse();
+
   const id = await getValidId(context);
   if (!id) return invalidIdResponse();
 
   try {
     await connectToDatabase();
-    const deleted = await ExpenseModel.findByIdAndDelete(id).exec();
+    const deleted = await ExpenseModel.findOneAndDelete({ _id: id, ownerId }).exec();
 
     if (!deleted) {
       return errorResponse(404, "NOT_FOUND", "Expense not found.");

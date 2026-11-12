@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ExpenseFormDialog from "@/components/expense-form-dialog";
 import ExpenseList from "@/components/expense-list";
 import DeleteConfirmationDialog from "@/components/delete-confirmation-dialog";
+import AccountControls from "@/components/account-controls";
 import {
   apiCategoryByLabel,
   expenseFromApi,
@@ -55,6 +57,7 @@ const currencyIcon = (
 );
 
 export default function ExpenseDashboard() {
+  const router = useRouter();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -68,9 +71,37 @@ export default function ExpenseDashboard() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [requestNotice, setRequestNotice] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const expensesHeadingRef = useRef<HTMLHeadingElement>(null);
   const saveInFlight = useRef(false);
   const deleteInFlight = useRef(false);
+  const loginRedirectStarted = useRef(false);
+  const loginRedirectTimer = useRef<number | null>(null);
+
+  const handleAuthenticatedSession = useCallback(() => {
+    loginRedirectStarted.current = false;
+    if (loginRedirectTimer.current !== null) {
+      window.clearTimeout(loginRedirectTimer.current);
+      loginRedirectTimer.current = null;
+    }
+    setSessionExpired((isExpired) => isExpired ? false : isExpired);
+  }, []);
+
+  const handleUnauthorizedResponse = useCallback(() => {
+    if (loginRedirectStarted.current) return;
+    loginRedirectStarted.current = true;
+    setSessionExpired(true);
+    loginRedirectTimer.current = window.setTimeout(() => {
+      loginRedirectTimer.current = null;
+      router.replace("/login");
+    }, 1000);
+  }, [router]);
+
+  useEffect(() => () => {
+    if (loginRedirectTimer.current !== null) {
+      window.clearTimeout(loginRedirectTimer.current);
+    }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -83,6 +114,10 @@ export default function ExpenseDashboard() {
         });
 
         if (!response.ok) {
+          if (response.status === 401) {
+            handleUnauthorizedResponse();
+            return;
+          }
           setLoadError(await requestErrorMessage(response, "load"));
           setLoadState("error");
           return;
@@ -102,7 +137,7 @@ export default function ExpenseDashboard() {
 
     void loadExpenses();
     return () => controller.abort();
-  }, [loadAttempt]);
+  }, [loadAttempt, handleUnauthorizedResponse]);
 
   useEffect(() => {
     function updateDateLabels() {
@@ -174,6 +209,10 @@ export default function ExpenseDashboard() {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          handleUnauthorizedResponse();
+          return;
+        }
         setSaveError(await requestErrorMessage(response, "save"));
         return;
       }
@@ -211,6 +250,10 @@ export default function ExpenseDashboard() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          handleUnauthorizedResponse();
+          return;
+        }
         setDeleteError(await requestErrorMessage(response, "delete"));
         return;
       }
@@ -220,6 +263,10 @@ export default function ExpenseDashboard() {
       setRequestNotice(null);
       try {
         const refreshResponse = await fetch("/api/expenses", { cache: "no-store" });
+        if (refreshResponse.status === 401) {
+          handleUnauthorizedResponse();
+          return;
+        }
         if (!refreshResponse.ok) throw new Error("Refresh failed.");
         const payload: unknown = await refreshResponse.json();
         if (!Array.isArray(payload)) throw new Error("Invalid expense response.");
@@ -260,6 +307,7 @@ export default function ExpenseDashboard() {
           </a>
 
           <div className="topbar-actions">
+            <AccountControls onAuthenticated={handleAuthenticatedSession} />
             <button
               className="theme-toggle"
               type="button"
@@ -277,6 +325,17 @@ export default function ExpenseDashboard() {
         </header>
 
         <div className="dashboard-content" id="main-content">
+          {sessionExpired && (
+            <div className="session-expired-toast" role="alert">
+              <span className="session-expired-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.25" /><path d="M10 6.2v4.5m0 3.1h.01" /></svg>
+              </span>
+              <span className="session-expired-copy">
+                <strong className="session-expired-title">Session expired</strong>
+                <span className="session-expired-message">Redirecting you to sign in…</span>
+              </span>
+            </div>
+          )}
           <section className="page-intro" aria-labelledby="page-title">
             <div>
               <p className="eyebrow">{currentDateLabel}</p>

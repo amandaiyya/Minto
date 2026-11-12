@@ -14,6 +14,10 @@ export const EXPENSE_CATEGORIES = [
 
 const expenseSchema = new Schema(
   {
+    ownerId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
     amountMinor: {
       type: Number,
       required: true,
@@ -45,6 +49,8 @@ const expenseSchema = new Schema(
   },
   { timestamps: true },
 );
+
+expenseSchema.index({ ownerId: 1, date: -1 });
 
 export type ExpenseDocument = InferSchemaType<typeof expenseSchema>;
 

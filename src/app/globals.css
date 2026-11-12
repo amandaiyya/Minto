@@ -89,7 +89,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .brand-mark svg { width: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .brand-name { font-size: 19px; font-weight: 650; letter-spacing: -.7px; }
 .brand-name span { color: var(--mint-strong); }
-.topbar-actions { display: flex; align-items: center; gap: 12px; }
+.topbar-actions { display: flex; min-width: 0; align-items: center; gap: 12px; }
+.account-controls { position: relative; display: flex; min-width: 0; flex: 0 1 auto; align-items: center; gap: 6px; }
+.account-identity { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.account-initial { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: var(--surface-muted); color: var(--mint-strong); font-size: 12px; font-weight: 650; }
+.account-signout { min-width: 104px; min-height: 36px; padding-inline: 10px; font-size: 11px; white-space: nowrap; }
+.account-error { position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; width: max-content; max-width: min(280px, calc(100vw - 32px)); margin: 0; border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border)); border-radius: 10px; padding: 10px 12px; background: var(--danger-surface); color: var(--danger); box-shadow: var(--shadow-card); font-size: 11px; line-height: 1.45; }
 .button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 12px; padding: 0 17px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 150ms ease, transform 150ms ease, border-color 150ms ease; }
 .button:active { transform: translateY(1px); }
 .button-primary { background: var(--mint-strong); color: #fff; }
@@ -162,7 +167,38 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .empty-state h3 { margin: 13px 0 4px; font-size: 15px; }
 .empty-state p { max-width: 270px; margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
 .request-notice { margin: 0; border-bottom: 1px solid var(--border); padding: 11px 22px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.session-expired-toast { position: fixed; z-index: 100; top: 94px; left: 50%; display: flex; width: min(420px, calc(100vw - 32px)); align-items: flex-start; gap: 11px; transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--border)); border-radius: 13px; padding: 13px 15px; background: var(--danger-surface); color: var(--text); box-shadow: var(--shadow-card); pointer-events: none; }
+.session-expired-icon { display: grid; width: 22px; height: 22px; flex: 0 0 auto; place-items: center; color: var(--danger); }
+.session-expired-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.session-expired-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.session-expired-title { color: var(--text); font-size: 12px; font-weight: 650; line-height: 1.35; }
+.session-expired-message { color: var(--text-muted); font-size: 11px; line-height: 1.45; }
 .page-footer { display: flex; justify-content: space-between; gap: 12px; padding: 17px 2px 25px; color: var(--text-muted); font-size: 10px; }
+
+.auth-shell { display: grid; min-height: 100vh; min-height: 100dvh; place-items: center; padding: 28px 18px; }
+.auth-content { width: min(100%, 430px); }
+.auth-brand { margin: 0 0 24px 4px; }
+.auth-card { border: 1px solid var(--border); border-radius: 20px; padding: clamp(22px, 6vw, 34px); background: var(--surface); box-shadow: var(--shadow-card); }
+.auth-card > .eyebrow { margin-bottom: 9px; }
+.auth-card h1 { margin: 0; font-size: clamp(25px, 6vw, 30px); font-weight: 620; letter-spacing: -1px; line-height: 1.2; }
+.auth-subtitle { margin: 9px 0 24px; color: var(--text-muted); font-size: 13px; line-height: 1.55; }
+.auth-form { display: flex; flex-direction: column; gap: 17px; }
+.auth-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; }
+.auth-field label { color: var(--text); font-size: 12px; font-weight: 570; }
+.auth-input { width: 100%; min-height: 47px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; background: var(--surface); color: var(--text); font-size: 14px; }
+.auth-input:focus { border-color: var(--mint-strong); }
+.auth-input[aria-invalid="true"] { border-color: var(--danger); }
+.auth-password-wrap { position: relative; }
+.auth-password-wrap .auth-input { padding-right: 68px; }
+.auth-visibility { position: absolute; top: 3px; right: 3px; min-width: 58px; min-height: 41px; border: 0; border-radius: 8px; background: transparent; color: var(--mint-strong); cursor: pointer; font-size: 12px; font-weight: 620; }
+.auth-visibility:hover { background: var(--surface-muted); }
+.auth-field-error { color: var(--danger); font-size: 11px; line-height: 1.4; }
+.auth-password-hint { margin: -8px 0 0; color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+.auth-error { margin: 0; border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border)); border-radius: 10px; padding: 11px 12px; background: var(--danger-surface); color: var(--danger); font-size: 12px; line-height: 1.5; }
+.auth-submit { width: 100%; margin-top: 2px; }
+.auth-switch { margin: 22px 0 0; color: var(--text-muted); font-size: 12px; text-align: center; }
+.auth-switch a { color: var(--mint-strong); font-weight: 620; text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }
 
 .expense-dialog { position: fixed; inset: 0; width: min(460px, calc(100vw - 32px)); max-width: none; max-height: min(calc(100dvh - 32px), 760px); overflow-x: visible; overflow-y: auto; margin: auto; border: 1px solid var(--border); border-radius: 20px; padding: 23px; background: var(--surface); color: var(--text); box-shadow: 0 24px 80px rgb(15 30 22 / 25%); }
 .expense-dialog::backdrop { background: rgb(14 24 18 / 46%); backdrop-filter: blur(3px); }
@@ -230,11 +266,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 @media (max-width: 640px) {
   .app-shell { padding-inline: 16px; }
-  .topbar { height: 70px; }
+  .topbar { height: auto; min-height: 70px; flex-wrap: wrap; row-gap: 14px; padding-block: 8px; }
   .brand { gap: 8px; }
   .brand-mark { width: 31px; height: 31px; border-radius: 10px; }
   .brand-name { font-size: 18px; }
-  .topbar-actions { gap: 7px; }
+  .topbar-actions { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 40px max-content; gap: 6px; }
+  .account-controls { width: 100%; gap: 5px; }
+  .account-signout { min-width: 96px; padding-inline: 7px; font-size: 12px; }
   .theme-toggle { width: 40px; min-height: 40px; }
   .add-button { min-height: 40px; gap: 5px; padding-inline: 11px; font-size: 12px; }
   .dashboard-content { padding-top: 29px; }
@@ -272,6 +310,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 360px) {
   .field-grid { grid-template-columns: 1fr; }
   .app-shell { padding-inline: 12px; }
+  .account-initial { display: none; }
   .add-button { padding-inline: 9px; }
   .expense-row { gap: 7px; padding-inline: 11px; }
   .summary-card { padding-inline: 11px; }
@@ -282,4 +321,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
+@media (max-width: 640px) {
+  .session-expired-toast { top: 112px; padding: 12px 13px; }
 }
